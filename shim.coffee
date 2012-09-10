@@ -1,8 +1,6 @@
 
 # Require gets overwritten by browserify, so we have to reimplement it from scratch - boo :(
-mkweb = new Function "exports", "window", phantom.loadModuleSource('webpage')
-webpage = {}
-mkweb.call {}, webpage, {}
+webpage = core_require('webpage');
 
 proto = require 'dnode-protocol'
 
@@ -19,14 +17,14 @@ descend = (op, obj, key, val) ->
   cur = cur[keys.shift()] while keys.length > 1
 
   cur[keys[0]] = val if op is 'set'
-
+    
   cur[keys[0]]
 
 
 mkwrap = (src, pass=[], special={}) ->
   obj =
     set: (key, val, cb=->) ->
-
+      
       #Fnwrap so PhantomJS doesn't segfault when it tries to call the callback
       val = fnwrap val if typeof val is "function"
       cb descend 'set', src, key, val
@@ -39,7 +37,7 @@ mkwrap = (src, pass=[], special={}) ->
 
         # This idempotent tomfoolery is required to stop PhantomJS from segfaulting
         args[i] = fnwrap arg for arg, i in args when typeof arg is 'function'
-
+          
         src[k] args...
 
   for own k of special
@@ -49,7 +47,7 @@ mkwrap = (src, pass=[], special={}) ->
 pageWrap = (page) -> mkwrap page,
   ['open','includeJs','sendEvent','release','uploadFile']
   injectJs: (js, cb=->) -> cb page.injectJs js
-  evaluate: (fn, cb=(->) ,args...) -> cb page.evaluate.call(page, [fn].concat(args))
+  evaluate: (fn, cb=->) -> cb page.evaluate fn
   render: (file, cb=->) -> page.render file; cb()
 
 _phantom = mkwrap phantom,
